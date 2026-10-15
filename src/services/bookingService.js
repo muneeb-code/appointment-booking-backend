@@ -14,7 +14,7 @@ exports.createBooking = async ({
     duration_minutes <= 0
   ) {
     const err = new Error(
-      "Invalid input data. Duration must be greater than 0."
+      "Invalid input data. Duration must be greater than 0.",
     );
     err.statusCode = 400;
     throw err;
@@ -32,13 +32,13 @@ exports.createBooking = async ({
       p_consultant_id: parseInt(consultant_id, 10),
       p_start_time: start_time,
       p_duration: parseInt(duration_minutes, 10),
-    }
+    },
   );
 
   if (rpcError) throw rpcError;
   if (isConflict) {
     const err = new Error(
-      "Booking conflict: Consultant is already scheduled for this time slot."
+      "Booking conflict: Consultant is already scheduled for this time slot.",
     );
     err.statusCode = 409;
     throw err;
@@ -62,7 +62,6 @@ exports.createBooking = async ({
 };
 
 exports.getBookings = async (consultant_id) => {
-  // Safe fetch query
   let query = supabase
     .from("bookings")
     .select("*")
@@ -99,7 +98,7 @@ exports.rescheduleBooking = async (id, { start_time, duration_minutes }) => {
 
   if (existing.status !== "Scheduled") {
     const err = new Error(
-      "Only appointments with status Scheduled can be rescheduled."
+      "Only appointments with status Scheduled can be rescheduled.",
     );
     err.statusCode = 400;
     throw err;
@@ -123,13 +122,13 @@ exports.rescheduleBooking = async (id, { start_time, duration_minutes }) => {
       p_consultant_id: parseInt(existing.consultant_id, 10),
       p_start_time: finalStart,
       p_duration: finalDuration,
-    }
+    },
   );
 
   if (rpcError) throw rpcError;
   if (isConflict) {
     const err = new Error(
-      "Proposed time slot conflicts with another existing booking."
+      "Proposed time slot conflicts with another existing booking.",
     );
     err.statusCode = 409;
     throw err;
