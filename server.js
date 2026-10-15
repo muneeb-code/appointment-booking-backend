@@ -1,26 +1,26 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-
-const bookingRoutes = require('./src/routes/bookingRoutes');
-const consultantRoutes = require('./src/routes/consultantRoutes');
-const customerRoutes = require('./src/routes/customerRoutes');
-const errorHandler = require('./src/middlewares/errorHandler');
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
 
-// Distinct Modular API Routes
-app.use('/bookings', bookingRoutes);
-app.use('/consultants', consultantRoutes);
-app.use('/customers', customerRoutes);
+// Path update: src/ routes import karein
+const bookingRoutes = require("./src/routes/bookingRoutes");
+const consultantRoutes = require("./src/routes/consultantRoutes");
+const customerRoutes = require("./src/routes/customerRoutes");
 
-// Centralized Error Handling
-app.use(errorHandler);
+app.use("/bookings", bookingRoutes);
+app.use("/consultants", consultantRoutes);
+app.use("/customers", customerRoutes);
 
+app.get("/", (req, res) => {
+  res.send("Appointment Booking API Running...");
+});
+
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Modular Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });

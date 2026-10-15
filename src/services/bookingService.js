@@ -14,7 +14,7 @@ exports.createBooking = async ({
     duration_minutes <= 0
   ) {
     const err = new Error(
-      "Invalid input data. Duration must be greater than 0.",
+      "Invalid input data. Duration must be greater than 0."
     );
     err.statusCode = 400;
     throw err;
@@ -29,16 +29,16 @@ exports.createBooking = async ({
   const { data: isConflict, error: rpcError } = await supabase.rpc(
     "check_booking_conflict",
     {
-      p_consultant_id: consultant_id,
+      p_consultant_id: parseInt(consultant_id, 10),
       p_start_time: start_time,
-      p_duration: duration_minutes,
-    },
+      p_duration: parseInt(duration_minutes, 10),
+    }
   );
 
   if (rpcError) throw rpcError;
   if (isConflict) {
     const err = new Error(
-      "Booking conflict: Consultant is already scheduled for this time slot.",
+      "Booking conflict: Consultant is already scheduled for this time slot."
     );
     err.statusCode = 409;
     throw err;
@@ -48,10 +48,10 @@ exports.createBooking = async ({
     .from("bookings")
     .insert([
       {
-        consultant_id,
-        customer_id,
+        consultant_id: parseInt(consultant_id, 10),
+        customer_id: parseInt(customer_id, 10),
         start_time,
-        duration_minutes,
+        duration_minutes: parseInt(duration_minutes, 10),
         status: "Scheduled",
       },
     ])
@@ -62,24 +62,33 @@ exports.createBooking = async ({
 };
 
 exports.getBookings = async (consultant_id) => {
+  // Safe fetch query
   let query = supabase
     .from("bookings")
     .select("*")
     .order("start_time", { ascending: true });
+
   if (consultant_id) {
-    query = query.eq("consultant_id", consultant_id);
+    query = query.eq("consultant_id", parseInt(consultant_id, 10));
   }
 
   const { data, error } = await query;
   if (error) throw error;
-  return data;
+  return data || [];
 };
 
 exports.rescheduleBooking = async (id, { start_time, duration_minutes }) => {
+  const numericId = parseInt(id, 10);
+  if (isNaN(numericId)) {
+    const err = new Error("Invalid booking ID.");
+    err.statusCode = 400;
+    throw err;
+  }
+
   const { data: existing, error: fetchErr } = await supabase
     .from("bookings")
-    .select("*")
-    .eq("id", id)
+    .select("consultant_id, status, start_time, duration_minutes")
+    .eq("id", numericId)
     .single();
 
   if (fetchErr || !existing) {
@@ -90,16 +99,18 @@ exports.rescheduleBooking = async (id, { start_time, duration_minutes }) => {
 
   if (existing.status !== "Scheduled") {
     const err = new Error(
-      "Only appointments with status Scheduled can be rescheduled.",
+      "Only appointments with status Scheduled can be rescheduled."
     );
     err.statusCode = 400;
     throw err;
   }
 
-  const newStart = start_time || existing.start_time;
-  const newDuration = duration_minutes || existing.duration_minutes;
+  const finalStart = start_time || existing.start_time;
+  const finalDuration = duration_minutes
+    ? parseInt(duration_minutes, 10)
+    : existing.duration_minutes;
 
-  if (new Date(newStart) <= new Date()) {
+  if (new Date(finalStart) <= new Date()) {
     const err = new Error("Rescheduled start time must be in the future.");
     err.statusCode = 400;
     throw err;
@@ -108,17 +119,17 @@ exports.rescheduleBooking = async (id, { start_time, duration_minutes }) => {
   const { data: isConflict, error: rpcError } = await supabase.rpc(
     "check_booking_conflict_exclude_self",
     {
-      p_booking_id: parseInt(id),
-      p_consultant_id: existing.consultant_id,
-      p_start_time: newStart,
-      p_duration: newDuration,
-    },
+      p_booking_id: numericId,
+      p_consultant_id: parseInt(existing.consultant_id, 10),
+      p_start_time: finalStart,
+      p_duration: finalDuration,
+    }
   );
 
   if (rpcError) throw rpcError;
   if (isConflict) {
     const err = new Error(
-      "Proposed time slot conflicts with another existing booking.",
+      "Proposed time slot conflicts with another existing booking."
     );
     err.statusCode = 409;
     throw err;
@@ -126,8 +137,8 @@ exports.rescheduleBooking = async (id, { start_time, duration_minutes }) => {
 
   const { data, error } = await supabase
     .from("bookings")
-    .update({ start_time: newStart, duration_minutes: newDuration })
-    .eq("id", id)
+    .update({ start_time: finalStart, duration_minutes: finalDuration })
+    .eq("id", numericId)
     .select();
 
   if (error) throw error;
@@ -135,10 +146,11 @@ exports.rescheduleBooking = async (id, { start_time, duration_minutes }) => {
 };
 
 exports.cancelBooking = async (id) => {
+  const numericId = parseInt(id, 10);
   const { data, error } = await supabase
     .from("bookings")
     .update({ status: "Cancelled" })
-    .eq("id", id)
+    .eq("id", numericId)
     .select();
 
   if (error) throw error;
