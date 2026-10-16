@@ -6,7 +6,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
+module.exports = app;
 // Path update: src/ routes import karein
 const bookingRoutes = require("./src/routes/bookingRoutes");
 const consultantRoutes = require("./src/routes/consultantRoutes");
