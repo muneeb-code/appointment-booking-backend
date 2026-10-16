@@ -4,7 +4,14 @@ require("dotenv").config();
 
 const app = express();
 
-app.use(cors());
+// Allow request from all origins or specify your frontend Vercel domain
+app.use(
+  cors({
+    origin: "*", // or "https://appointment-booking-frontend.vercel.app"
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 app.use(express.json());
 module.exports = app;
 // Path update: src/ routes import karein
