@@ -14,12 +14,12 @@ app.use(
   }),
 );
 
-// Explicitly respond 200 OK to all OPTIONS preflight checks
-app.options("*", cors());
+// Express v5 / path-to-regexp fix for OPTIONS preflight checks
+app.options(/(.*)/, cors());
 
 app.use(express.json());
-module.exports = app;
-// Path update: src/ routes import karein
+
+// Routes import
 const bookingRoutes = require("./src/routes/bookingRoutes");
 const consultantRoutes = require("./src/routes/consultantRoutes");
 const customerRoutes = require("./src/routes/customerRoutes");
@@ -32,7 +32,11 @@ app.get("/", (req, res) => {
   res.send("Appointment Booking API Running...");
 });
 
+// Port & Server Start (for local testing)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+// Always export app at the very end for Vercel Serverless Deployment
+module.exports = app;
