@@ -4,10 +4,10 @@ require("dotenv").config();
 
 const app = express();
 
-// Enable CORS for all origins & preflight OPTIONS requests
+// 1. Dynamic / Wildcard CORS fix for Vercel + Local testing
 app.use(
   cors({
-    origin: "*",
+    origin: (origin, callback) => callback(null, true), // Allows any origin dynamically with credentials
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
     credentials: true,
@@ -32,11 +32,13 @@ app.get("/", (req, res) => {
   res.send("Appointment Booking API Running...");
 });
 
-// Port & Server Start (for local testing)
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// 2. Only listen to PORT when running locally (Not on Vercel)
+if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
 
-// Always export app at the very end for Vercel Serverless Deployment
+// Always export app at the end for Vercel Serverless Function
 module.exports = app;
